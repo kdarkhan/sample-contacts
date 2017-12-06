@@ -20,7 +20,7 @@ class SessionStorageImpl @Inject()(cacheApi: AsyncCacheApi)
   }
 
   def generateToken(userId: Long): Future[String] = {
-    val token = r.nextString(TokenLength)
+    val token = r.alphanumeric.take(TokenLength).mkString
     cacheApi.set(token, userId, TokenDuration).map(_ => token)
   }
 

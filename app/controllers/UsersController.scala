@@ -4,7 +4,7 @@ import javax.inject._
 
 import auth.{PasswordHasher, SecuredAction, SessionStorage}
 import daos.UsersDao
-import play.api.libs.json.{JsError, JsObject, JsSuccess, Json}
+import play.api.libs.json.{JsError, JsSuccess, Json}
 import play.api.mvc._
 import utils.ConvenienceUtils.Implicits._
 
@@ -43,10 +43,16 @@ class UsersController @Inject()(
     request.body.validate[CreateUserForm](CreateUserForm.reader) match {
       case JsSuccess(formData, _) =>
         val hashed = passwordHasher.hashPassword(formData.password)
-        usersDao.createUser(formData.username, hashed.hash, hashed.salt) map {
-          _ =>
-            Created(Json.obj())
+        usersDao.findByUsername(formData.username) flatMap {
+          case Some(_) => BadRequest("User already exists").successful
+          case None =>
+            usersDao
+              .createUser(formData.username, hashed.hash, hashed.salt) map {
+              _ =>
+                Created(Json.obj())
+            }
         }
+
       case JsError(errors) =>
         BadRequest(s"""Invalid data ${errors.map(_._2).mkString("\n")}""").successful
     }

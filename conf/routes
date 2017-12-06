@@ -9,7 +9,7 @@ GET     /persons                    controllers.PersonController.getPersons
 
 GET     /contacts                   controllers.ContactsController.listAllContacts
 POST    /contacts                   controllers.ContactsController.createContact
-GET     /contacts/:id               controllers.ContactsController.updateContact(id: Long)
+POST    /contacts/:id               controllers.ContactsController.updateContact(id: Long)
 DELETE  /contacts/:id               controllers.ContactsController.deleteContact(id: Long)
 POST    /contacts/:id/entries       controllers.ContactsController.addPhoneNumber(id: Long)
 
