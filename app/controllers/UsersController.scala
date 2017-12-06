@@ -3,8 +3,7 @@ package controllers
 import javax.inject._
 
 import daos.UsersDao
-import play.api.data.Form
-import play.api.data.Forms._
+import play.api.libs.json.{JsError, JsSuccess, Json}
 import play.api.mvc._
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -14,36 +13,24 @@ class UsersController @Inject()(
     cc: MessagesControllerComponents)(implicit ec: ExecutionContext)
     extends MessagesAbstractController(cc) {
 
-  /**
-    * The mapping for the person form.
-    */
-  val createUserForm: Form[CreateUserForm] = Form {
-    mapping(
-      "name" -> nonEmptyText,
-      "age" -> text.verifying("Password length should be greater than 5",
-                              _.length > 5)
-    )(CreateUserForm.apply)(CreateUserForm.unapply)
-  }
-
   def createUserSession = Action.async { implicit request =>
     Future.successful(Ok("create session"))
   }
 
-  def createUser = Action.async { implicit request =>
-    Future.successful(Ok("create user"))
-    createUserForm.bindFromRequest.fold(
-      errors => {
-        Future.successful(
-          BadRequest(
-            s"""Invalid data ${errors.errors.map(_.message).mkString("\n")}"""))
-      },
-      formData => {
+  def createUser = Action.async(parse.json) { implicit request =>
+    request.body.validate[CreateUserForm](CreateUserForm.formatter) match {
+      case JsSuccess(formData, _) =>
         usersDao.createUser(formData.username, formData.password) map { user =>
           Created("")
         }
-      }
-    )
+      case JsError(errors) =>
+        Future.successful(
+          BadRequest(s"""Invalid data ${errors.map(_._2).mkString("\n")}"""))
+    }
   }
 }
 
 case class CreateUserForm(username: String, password: String)
+object CreateUserForm {
+  implicit val formatter = Json.format[CreateUserForm]
+}

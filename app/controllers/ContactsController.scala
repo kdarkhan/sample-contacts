@@ -3,9 +3,7 @@ package controllers
 import javax.inject._
 
 import daos.{ContactsDao, UsersDao}
-import play.api.data.Form
-import play.api.data.Forms._
-import play.api.libs.json.Json
+import play.api.libs.json.{JsError, JsSuccess, Json}
 import play.api.mvc._
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -16,19 +14,6 @@ class ContactsController @Inject(
     cc: MessagesControllerComponents)(implicit ec: ExecutionContext)
     extends MessagesAbstractController(cc) {
 
-  val contactForm: Form[CreateContactForm] = Form {
-    mapping(
-      "first_name" -> nonEmptyText,
-      "last_name" -> nonEmptyText
-    )(CreateContactForm.apply)(CreateContactForm.unapply)
-  }
-
-  val phoneForm: Form[AddPhoneNumberForm] = Form {
-    mapping(
-      "phone" -> nonEmptyText
-    )(AddPhoneNumberForm.apply)(AddPhoneNumberForm.unapply)
-  }
-
   def listAllContacts = Action.async { implicit request =>
     // TODO get actual userId
     val userId = 100L
@@ -37,13 +22,11 @@ class ContactsController @Inject(
     }
   }
 
-  def createContact = Action.async { implicit request =>
+  def createContact = Action.async(parse.json) { implicit request =>
     val userId = 100L // TODO
-    contactForm.bindFromRequest.fold(
-      errorForm => {
-        Future.successful(BadRequest(errorForm.errors.toString))
-      },
-      formData => {
+    request.body
+      .validate[CreateContactForm](CreateContactForm.formatter) match {
+      case JsSuccess(formData, _) =>
         contactsDao
           .createContact(userId, formData.firstName, formData.lastName)
           .map { c =>
@@ -53,17 +36,16 @@ class ContactsController @Inject(
               )
             )
           }
-      }
-    )
+      case JsError(errors) =>
+        Future.successful(BadRequest(errors.toString))
+    }
   }
 
-  def updateContact(id: Long) = Action.async { implicit request =>
+  def updateContact(id: Long) = Action.async(parse.json) { implicit request =>
     // TODO check permissions
-    contactForm.bindFromRequest.fold(
-      errorForm => {
-        Future.successful(BadRequest(errorForm.errors.toString))
-      },
-      formData => {
+    request.body
+      .validate[CreateContactForm](CreateContactForm.formatter) match {
+      case JsSuccess(formData, _) =>
         contactsDao
           .updateContact(id, formData.firstName, formData.lastName)
           .map {
@@ -75,8 +57,9 @@ class ContactsController @Inject(
               )
             case false => BadRequest("Contact is not found")
           }
-      }
-    )
+      case JsError(errors) =>
+        Future.successful(BadRequest(errors.toString))
+    }
   }
 
   def deleteContact(id: Long) = Action.async { implicit request =>
@@ -87,13 +70,11 @@ class ContactsController @Inject(
     }
   }
 
-  def addPhoneNumber(id: Long) = Action.async { implicit request =>
+  def addPhoneNumber(id: Long) = Action.async(parse.json) { implicit request =>
     val userId = 100L
-    phoneForm.bindFromRequest.fold(
-      errorForm => {
-        Future.successful(BadRequest(errorForm.errors.toString))
-      },
-      formData => {
+    request.body
+      .validate[AddPhoneNumberForm](AddPhoneNumberForm.formatter) match {
+      case JsSuccess(formData, _) =>
         contactsDao.getById(id).flatMap {
           case None => Future.successful(BadRequest("Contact is not found"))
           case Some(c) =>
@@ -113,10 +94,18 @@ class ContactsController @Inject(
               Future.successful(Unauthorized("Cannot edit contact"))
             }
         }
-      }
-    )
+      case JsError(errors) =>
+        Future.successful(BadRequest(errors.toString))
+    }
   }
 }
 
 case class CreateContactForm(firstName: String, lastName: String)
+object CreateContactForm {
+  implicit val formatter = Json.format[CreateContactForm]
+}
+
 case class AddPhoneNumberForm(phone: String)
+object AddPhoneNumberForm {
+  implicit val formatter = Json.format[AddPhoneNumberForm]
+}
