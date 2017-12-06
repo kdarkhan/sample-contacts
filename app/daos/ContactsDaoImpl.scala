@@ -2,7 +2,6 @@ package daos
 
 import javax.inject.{Inject, Singleton}
 
-import dao.ContactsDao
 import models.{Contact, Person}
 import play.api.db.slick.DatabaseConfigProvider
 
@@ -55,7 +54,11 @@ class ContactsDaoImpl @Inject()(dbConfigProvider: DatabaseConfigProvider)(
   private val contacts = TableQuery[ContactsTable]
 
   def listUserContacts(userId: Long): Future[Seq[Contact]] = db.run {
-    contacts.result
+    contacts.filter(_.owner === userId).result
+  }
+
+  def getById(id: Long): Future[Option[Contact]] = db.run {
+    contacts.filter(_.id === id).result.headOption
   }
 
   def createContact(ownerId: Long,
@@ -79,7 +82,19 @@ class ContactsDaoImpl @Inject()(dbConfigProvider: DatabaseConfigProvider)(
     }
   }
 
-  def deleteContact(ownerId: Long, contactId: Long): Future[Boolean] = {
+   def updatePhones(contactId: Long,
+                    phones: List[String]): Future[Boolean] = {
+    db.run {
+      val q = for {
+        c <- contacts if c.id === contactId
+      } yield c.phones
+      q.update(phones)
+    } map {
+      _ > 0
+    }
+  }
+
+  def deleteContact(contactId: Long): Future[Boolean] = {
     db.run {
       contacts.filter(_.id === contactId).delete
     } map { _ > 0 }
