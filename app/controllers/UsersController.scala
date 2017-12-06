@@ -2,35 +2,58 @@ package controllers
 
 import javax.inject._
 
+import auth.{PasswordHasher, SecuredAction, SessionStorage}
 import daos.UsersDao
-import play.api.libs.json.{JsError, JsSuccess, Json}
+import play.api.libs.json.{JsError, JsObject, JsSuccess, Json}
 import play.api.mvc._
+import utils.ConvenienceUtils.Implicits._
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
 
 class UsersController @Inject()(
     usersDao: UsersDao,
-    cc: MessagesControllerComponents)(implicit ec: ExecutionContext)
+    cc: MessagesControllerComponents,
+    securedAction: SecuredAction,
+    passwordHasher: PasswordHasher,
+    sessionStorage: SessionStorage)(implicit ec: ExecutionContext)
     extends MessagesAbstractController(cc) {
 
-  def createUserSession = Action.async { implicit request =>
-    Future.successful(Ok("create session"))
+  def createUserSession = Action.async(parse.json) { implicit request =>
+    request.body.validate[CreateUserForm](CreateUserForm.reader) match {
+      case JsSuccess(formData, _) =>
+        usersDao.findByUsername(formData.username) flatMap {
+          case Some(user) =>
+            if (passwordHasher.checkPassword(formData.password,
+                                             user.hashedPassword,
+                                             user.salt)) {
+              sessionStorage.generateToken(user.id).map { token =>
+                Ok(Json.obj("token" -> token))
+              }
+            } else {
+              Forbidden("Bad password").successful
+            }
+          case None => Unauthorized.successful
+        }
+      case JsError(errors) =>
+        BadRequest(s"""Invalid data ${errors.map(_._2).mkString("\n")}""").successful
+    }
   }
 
   def createUser = Action.async(parse.json) { implicit request =>
-    request.body.validate[CreateUserForm](CreateUserForm.formatter) match {
+    request.body.validate[CreateUserForm](CreateUserForm.reader) match {
       case JsSuccess(formData, _) =>
-        usersDao.createUser(formData.username, formData.password) map { user =>
-          Created("")
+        val hashed = passwordHasher.hashPassword(formData.password)
+        usersDao.createUser(formData.username, hashed.hash, hashed.salt) map {
+          _ =>
+            Created(Json.obj())
         }
       case JsError(errors) =>
-        Future.successful(
-          BadRequest(s"""Invalid data ${errors.map(_._2).mkString("\n")}"""))
+        BadRequest(s"""Invalid data ${errors.map(_._2).mkString("\n")}""").successful
     }
   }
 }
 
 case class CreateUserForm(username: String, password: String)
 object CreateUserForm {
-  implicit val formatter = Json.format[CreateUserForm]
+  implicit val reader = Json.reads[CreateUserForm]
 }

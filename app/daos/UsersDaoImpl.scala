@@ -30,7 +30,7 @@ class UsersDaoImpl @Inject()(dbConfigProvider: DatabaseConfigProvider)(
   private class UsersTable(tag: Tag) extends Table[DbUser](tag, "users") {
 
     def id = column[Long]("id", O.PrimaryKey, O.AutoInc)
-    def username = column[String]("username")
+    def username = column[String]("username", O.Unique)
     def hashedPassword = column[String]("hashed_password")
     def salt = column[String]("salt")
 
@@ -55,10 +55,14 @@ class UsersDaoImpl @Inject()(dbConfigProvider: DatabaseConfigProvider)(
     users.result
   }
 
-  def createUser(username: String, password: String): Future[DbUser] =
+  def createUser(username: String, hashedPassword: String, salt: String): Future[DbUser] =
     db.run {
       (users.map(p => (p.username, p.hashedPassword, p.salt))
         returning users.map(_.id)
-        into ((data, id) => DbUser(id, data._1, data._2, data._3))) += (username, password, password)
+        into ((data, id) => DbUser(id, data._1, data._2, data._3))) += (username, hashedPassword, salt)
     }
+
+  def findByUsername(username: String): Future[Option[DbUser]] = db.run {
+    users.filter(_.username === username).result.headOption
+  }
 }

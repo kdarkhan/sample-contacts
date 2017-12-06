@@ -8,7 +8,7 @@ CREATE TABLE "people" (
 
 CREATE TABLE users (
   "id" BIGSERIAL PRIMARY KEY,
-  "username" VARCHAR(1024) NOT NULL,
+  "username" VARCHAR(1024) NOT NULL UNIQUE ,
   "hashed_password" VARCHAR(256) NOT NULL,
   "salt" VARCHAR(256) NOT NULL
 );

@@ -5,7 +5,7 @@ import models.Contact
 import scala.concurrent.Future
 
 trait ContactsDao {
-  def getById(id: Long): Future[Option[Contact]]
+  def findById(id: Long): Future[Option[Contact]]
   def listUserContacts(userId: Long): Future[Seq[Contact]]
   def createContact(ownerId: Long, firstName: String, lastName: String): Future[Contact]
   def updateContact(contactId: Long, firstName: String, lastName: String): Future[Boolean]

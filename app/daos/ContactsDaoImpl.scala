@@ -57,7 +57,7 @@ class ContactsDaoImpl @Inject()(dbConfigProvider: DatabaseConfigProvider)(
     contacts.filter(_.owner === userId).result
   }
 
-  def getById(id: Long): Future[Option[Contact]] = db.run {
+  def findById(id: Long): Future[Option[Contact]] = db.run {
     contacts.filter(_.id === id).result.headOption
   }
 
