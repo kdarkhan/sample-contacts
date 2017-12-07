@@ -4,11 +4,10 @@ import javax.inject._
 
 import auth.SecuredAction
 import daos.{ContactsDao, UsersDao}
+import play.api.libs.functional.syntax._
 import play.api.libs.json._
 import play.api.mvc._
 import utils.ConvenienceUtils.Implicits._
-import play.api.libs.json._
-import play.api.libs.functional.syntax._
 
 import scala.concurrent.ExecutionContext
 
@@ -32,7 +31,7 @@ class ContactsController @Inject(
         contactsDao
           .createContact(request.userId, formData.firstName, formData.lastName)
           .map { c =>
-            Ok(Json.obj("id" -> c.id))
+            Created(Json.obj("id" -> c.id))
           }
       case JsError(errors) =>
         BadRequest(errors.toString).successful
@@ -111,9 +110,19 @@ object CreateContactForm {
       (JsPath \ "last_name").read[String]
   )(CreateContactForm.apply _).filter(form =>
     form.firstName.nonEmpty || form.lastName.nonEmpty)
+
+  implicit val writer: OWrites[CreateContactForm] = (o: CreateContactForm) =>
+    Json.obj(
+      "first_name" -> o.firstName,
+      "last_name" -> o.lastName
+  )
 }
 
 case class AddPhoneNumberForm(phone: String)
 object AddPhoneNumberForm {
-  implicit val reader = Json.format[AddPhoneNumberForm].filter(_.phone.nonEmpty)
+  implicit val reader = Json.reads[AddPhoneNumberForm].filter(_.phone.nonEmpty)
+  implicit val writer = new OWrites[AddPhoneNumberForm] {
+    def writes(o: AddPhoneNumberForm): JsObject = Json.obj("phone" -> o.phone)
+  }
+
 }

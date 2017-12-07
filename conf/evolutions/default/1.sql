@@ -1,11 +1,5 @@
 # --- !Ups
 
-CREATE TABLE "people" (
-  "id" BIGSERIAL PRIMARY KEY,
-  "name" VARCHAR(100) NOT NULL,
-  "age" INTEGER NOT NULL
-);
-
 CREATE TABLE users (
   "id" BIGSERIAL PRIMARY KEY,
   "username" VARCHAR(1024) NOT NULL UNIQUE ,
@@ -23,6 +17,5 @@ CREATE TABLE contacts (
 
 # --- !Downs
 
-DROP TABLE people;
 DROP TABLE contacts;
 DROP TABLE users;

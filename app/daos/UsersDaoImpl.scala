@@ -1,6 +1,6 @@
 package daos
 
-import javax.inject.{Inject, Singleton}
+import javax.inject.Inject
 
 import models.DbUser
 import play.api.db.slick.DatabaseConfigProvider
@@ -12,7 +12,6 @@ import scala.concurrent.{ExecutionContext, Future}
   *
   * @param dbConfigProvider The Play db config provider. Play will inject this for you.
   */
-@Singleton
 class UsersDaoImpl @Inject()(dbConfigProvider: DatabaseConfigProvider)(
     implicit ec: ExecutionContext)
     extends UsersDao {
@@ -55,7 +54,9 @@ class UsersDaoImpl @Inject()(dbConfigProvider: DatabaseConfigProvider)(
     users.result
   }
 
-  def createUser(username: String, hashedPassword: String, salt: String): Future[DbUser] =
+  def createUser(username: String,
+                 hashedPassword: String,
+                 salt: String): Future[DbUser] =
     db.run {
       (users.map(p => (p.username, p.hashedPassword, p.salt))
         returning users.map(_.id)

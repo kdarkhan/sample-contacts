@@ -1,8 +1,8 @@
 package daos
 
-import javax.inject.{Inject, Singleton}
+import javax.inject.Inject
 
-import models.{Contact, Person}
+import models.Contact
 import play.api.db.slick.DatabaseConfigProvider
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -12,7 +12,6 @@ import scala.concurrent.{ExecutionContext, Future}
   *
   * @param dbConfigProvider The Play db config provider. Play will inject this for you.
   */
-@Singleton
 class ContactsDaoImpl @Inject()(dbConfigProvider: DatabaseConfigProvider)(
     implicit ec: ExecutionContext)
     extends ContactsDao {
@@ -82,8 +81,7 @@ class ContactsDaoImpl @Inject()(dbConfigProvider: DatabaseConfigProvider)(
     }
   }
 
-   def updatePhones(contactId: Long,
-                    phones: List[String]): Future[Boolean] = {
+  def updatePhones(contactId: Long, phones: List[String]): Future[Boolean] = {
     db.run {
       val q = for {
         c <- contacts if c.id === contactId

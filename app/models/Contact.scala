@@ -1,6 +1,9 @@
 package models
 
-import play.api.libs.json.{Json, Writes}
+import play.api.libs.json.{JsPath, Json, Writes}
+import play.api.libs.functional.syntax._
+import play.api.libs.json._
+import play.api.mvc._
 
 case class Contact(id: Long,
                    firstName: String,
@@ -16,4 +19,12 @@ object Contact {
       "last_name" -> o.lastName,
       "phones" -> Json.toJson(o.phones)
   )
+
+  implicit val reader = (
+    (JsPath \ "id").read[Long] and
+      (JsPath \ "first_name").read[String] and
+      (JsPath \ "last_name").read[String] and
+      (JsPath \ "phones").read[List[String]] and
+      (JsPath \ "owner").readWithDefault[Long](0) // json reader is used only in tests
+  )(Contact.apply _)
 }

@@ -18,8 +18,12 @@ class UsersController @Inject()(
     sessionStorage: SessionStorage)(implicit ec: ExecutionContext)
     extends MessagesAbstractController(cc) {
 
+  def index = Action { implicit request =>
+    Ok("The app has started. It provides /contacts and /user api")
+  }
+
   def createUserSession = Action.async(parse.json) { implicit request =>
-    request.body.validate[CreateUserForm](CreateUserForm.reader) match {
+    request.body.validate[CreateUserForm](CreateUserForm.formatter) match {
       case JsSuccess(formData, _) =>
         usersDao.findByUsername(formData.username) flatMap {
           case Some(user) =>
@@ -40,7 +44,7 @@ class UsersController @Inject()(
   }
 
   def createUser = Action.async(parse.json) { implicit request =>
-    request.body.validate[CreateUserForm](CreateUserForm.reader) match {
+    request.body.validate[CreateUserForm](CreateUserForm.formatter) match {
       case JsSuccess(formData, _) =>
         val hashed = passwordHasher.hashPassword(formData.password)
         usersDao.findByUsername(formData.username) flatMap {
@@ -61,5 +65,5 @@ class UsersController @Inject()(
 
 case class CreateUserForm(username: String, password: String)
 object CreateUserForm {
-  implicit val reader = Json.reads[CreateUserForm]
+  implicit val formatter = Json.format[CreateUserForm]
 }
