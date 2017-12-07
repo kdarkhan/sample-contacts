@@ -1,5 +1,6 @@
 package auth
 
+import java.time.Instant
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
@@ -11,7 +12,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 class SessionStorageImpl @Inject()(cacheApi: AsyncCacheApi)
     extends SessionStorage {
-  private val r = new scala.util.Random(31)
+  private val r = new scala.util.Random(Instant.now().toEpochMilli)
   val TokenLength = 10
   val TokenDuration = Duration(300, TimeUnit.MINUTES)
 

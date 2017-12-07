@@ -1,9 +1,11 @@
 version: '3'
 services:
   web:
-    image: "kdarkhan/contacts-sample:2.6.x"
+    image: "kdarkhan/contacts-sample:latest"
     depends_on:
-        - db
+        - "db"
+    ports:
+        - "9000:9000"
   db:
     image: "postgres:10.1"
     environment:

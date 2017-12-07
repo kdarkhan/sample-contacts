@@ -1,6 +1,7 @@
 package auth
 
 import com.google.inject.Inject
+import play.api.Logger
 import play.api.mvc._
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -23,10 +24,19 @@ class SecuredAction @Inject()(val parser: BodyParsers.Default,
         sessionStorage.getUserByToken(token) map {
           case Some(userId) =>
             Right(new AuthenticatedRequest[A](userId, request))
-          case None => Left(Unauthorized)
+          case None =>
+            SecuredAction.logger.warn(
+              s"$token method=${request.method} uri=${request.uri} remote-address=${request.remoteAddress} Invalid token=$token")
+            Left(Unauthorized)
         }
       case None =>
+        SecuredAction.logger.warn(
+          s"method=${request.method} uri=${request.uri} remote-address=${request.remoteAddress} without token")
         Left(Unauthorized).successful
     }
   }
+}
+
+object SecuredAction {
+  val logger = Logger("auth")
 }
