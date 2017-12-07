@@ -88,7 +88,7 @@ class ContactsController @Inject(
             case Some(c) =>
               if (c.owner == request.userId) {
                 contactsDao
-                  .updatePhones(id, c.phones :+ formData.phone)
+                  .updatePhones(id, (c.phones :+ formData.phone).distinct)
                   .map {
                     case true  => Created(Json.obj("id" -> id))
                     case false => BadRequest("Contact is not found")

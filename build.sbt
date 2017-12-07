@@ -1,8 +1,20 @@
-name := """play-scala-slick-example"""
+name := """contacts-sample"""
 
-version := "2.6.x"
+version := "0.0.1"
 
-lazy val root = (project in file(".")).enablePlugins(PlayScala)
+lazy val root = (project in file("."))
+    .settings(Seq(
+      packageName in Docker := "contacts-sample",
+      maintainer in Docker := "Darkhan Kubigenov",
+      dockerExposedPorts := Seq(9000),
+      dockerUsername := Some("kdarkhan"),
+      dockerUpdateLatest := true,
+      // disable doc generation
+      publishArtifact in (Compile, packageDoc) := false,
+      publishArtifact in packageDoc := false,
+      sources in (Compile,doc) := Seq.empty
+    ))
+  .enablePlugins(PlayScala,DockerPlugin)
 
 scalaVersion := "2.12.4"
 

@@ -13,7 +13,7 @@ class SessionStorageImpl @Inject()(cacheApi: AsyncCacheApi)
     extends SessionStorage {
   private val r = new scala.util.Random(31)
   val TokenLength = 10
-  val TokenDuration = Duration(30, TimeUnit.MINUTES)
+  val TokenDuration = Duration(300, TimeUnit.MINUTES)
 
   def getUserByToken(token: String): Future[Option[Long]] = {
     cacheApi.get[Long](token)
